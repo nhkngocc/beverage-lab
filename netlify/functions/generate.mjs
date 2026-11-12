@@ -2,7 +2,7 @@
 // Receives { ingredients, level }, validates it, asks OpenRouter, returns { ok, result } or { ok:false, error }.
 // Settings come from Netlify environment variables: OPENROUTER_API_KEY and MODEL_NAME. Never put the key in this file.
 
-const TIMEOUT_MS = 9000; // Netlify's default function limit is believed to be about 10 s. Check Netlify's docs before raising this.
+const TOTAL_BUDGET_MS = 24000; // total time for all AI attempts. If your Netlify plan kills functions at 10 s, see the note in the chat.
 const NAME_RE = /^[\p{L}\p{N} '’&.-]+$/u;
 const VERDICTS = ["works", "works_with_fix", "wont_work", "rejected"];
 
@@ -95,12 +95,10 @@ function validateInput(body) {
 }
 
 // ---------- calling OpenRouter ----------
-async function callAI(key, model, messages, temperature) {
+async function callAI(key, payload, timeoutMs) {
   const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => ctl.abort(), timeoutMs);
   try {
-    const payload = { model, messages, max_tokens: 1100 };
-    if (temperature !== undefined) payload.temperature = temperature;
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -113,6 +111,14 @@ async function callAI(key, model, messages, temperature) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+// The reply text can be a string or a list of parts, depending on the model.
+function getText(data) {
+  const c = data?.choices?.[0]?.message?.content;
+  if (typeof c === "string") return c;
+  if (Array.isArray(c)) return c.map((p) => (typeof p === "string" ? p : p?.text || "")).join("");
+  return "";
 }
 
 // ---------- checking the AI's answer ----------
@@ -188,29 +194,53 @@ export default async (req) => {
     input.ingredients.map((i) => `<ingredient>${i}</ingredient>`).join("\n");
   const system = `${SYSTEM_PROMPT}\n\n${LEVEL_BLOCKS[input.level]}`;
 
+  // Several ways to ask, from most precise to most forgiving. Different models support different options.
+  const attempts = [
+    { messages: [{ role: "system", content: system }, { role: "user", content: userMsg }],
+      extra: { temperature: TEMPS[input.level], response_format: { type: "json_object" }, reasoning: { effort: "low" }, max_tokens: 3000 } },
+    { messages: [{ role: "system", content: system }, { role: "user", content: userMsg }],
+      extra: { temperature: TEMPS[input.level], max_tokens: 3000 } },
+    { messages: [{ role: "user", content: `${system}\n\n${userMsg}` }],
+      extra: { max_tokens: 3000 } },
+  ];
+
+  const deadline = Date.now() + TOTAL_BUDGET_MS;
+  let lastFail = fail(502, "The lab mixed up its notes. Please try again.");
+
   try {
-    let r = await callAI(key, model, [{ role: "system", content: system }, { role: "user", content: userMsg }], TEMPS[input.level]);
+    for (const at of attempts) {
+      const left = deadline - Date.now();
+      if (left < 3000) break;
 
-    // Some models reject the system role or the temperature setting. Retry once in a simpler form.
-    if (r.status === 400) {
-      r = await callAI(key, model, [{ role: "user", content: `${system}\n\n${userMsg}` }]);
-    }
+      const r = await callAI(key, { model, messages: at.messages, ...at.extra }, left);
 
-    if (r.status === 402) return fail(502, "The AI account is out of credit. Please tell the site owner.");
-    if (r.status === 401 || r.status === 403) return fail(500, "Server key problem. Please tell the site owner.");
-    if (r.status === 429) return fail(429, "Too many requests right now. Please try again shortly.");
-    if (r.status < 200 || r.status >= 300) {
-      console.error("OpenRouter status:", r.status);
-      return fail(502, "The lab is having trouble. Please try again.");
-    }
+      // Problems that retrying in another form cannot fix.
+      if (r.status === 402) return fail(502, "The AI account is out of credit. Please tell the site owner.");
+      if (r.status === 401 || r.status === 403) return fail(500, "Server key problem. Please tell the site owner.");
+      if (r.status === 429) return fail(429, "Too many requests right now. Please try again shortly.");
 
-    const text = r.data?.choices?.[0]?.message?.content;
-    const result = parseResult(text, input.level);
-    if (!result) {
-      console.error("Unusable AI reply. finish_reason:", r.data?.choices?.[0]?.finish_reason, "length:", String(text || "").length);
-      return fail(502, "The lab mixed up its notes. Please try again.");
+      if (r.status < 200 || r.status >= 300) {
+        // Often a 400 because the model dislikes an option. Log why, then try the next simpler form.
+        console.error("OpenRouter status:", r.status, JSON.stringify(r.data?.error || r.data).slice(0, 400));
+        lastFail = fail(502, "The lab is having trouble. Please try again.");
+        continue;
+      }
+
+      // OpenRouter can return HTTP 200 with an error inside.
+      if (r.data?.error) {
+        console.error("OpenRouter body error:", JSON.stringify(r.data.error).slice(0, 400));
+        lastFail = fail(502, "The lab is having trouble. Please try again.");
+        continue;
+      }
+
+      const text = getText(r.data);
+      const result = parseResult(text, input.level);
+      if (result) return reply(200, { ok: true, result });
+
+      console.error("Unusable AI reply. finish_reason:", r.data?.choices?.[0]?.finish_reason, "length:", text.length, "start:", text.slice(0, 200));
+      lastFail = fail(502, "The lab mixed up its notes. Please try again.");
     }
-    return reply(200, { ok: true, result });
+    return lastFail;
   } catch (e) {
     if (e && e.name === "AbortError") return fail(504, "That took too long. Please try again.");
     console.error("Function error:", e && e.message);
