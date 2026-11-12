@@ -61,18 +61,10 @@ For wont_work and rejected: drink_name, tagline, temperature, flavour_profile, w
 
 const LEVEL_BLOCKS = {
   classic: `LEVEL: classic. Goal: the safe, recognisable answer. Choose a real, well-known drink or a standard version of a well-known drink style that fits the ingredients. Use standard proportions. Use all the user's ingredients if natural. NAMING RULE: if the drink has an established, widely used name (for example Margarita, Mojito, Chai Latte, Milkshake), drink_name must be that exact name, with no added words, adjectives or puns. Only if no common name exists, invent a short, plain, descriptive name of 2 to 4 words (for example "Honey Lemon Tea"), never quirky, abstract or poetic. Keep the tagline simple and plain. Extras: none (pantry only). origin_note null. mutation_log empty.`,
-  twist: `LEVEL: twist. Goal: something less common than the classic answer. Work in this strict order of priority.
-PRIORITY 1 - A DIFFERENT, LESS COMMON RECIPE. First decide what the classic, most obvious drink for these ingredients would be. Then look for a different real drink or established recipe that fits these ingredients and is clearly less common than that classic, for example a regional, traditional, historical or niche drink. Use it only if ALL of these are true: (a) you are confident it is a real drink, (b) it genuinely fits the user's ingredients in flavour, (c) it is a different drink from the classic, not a rename or a small variation of it, (d) it is drinkable and safe. If so: give its real name (a light, readable playful tweak is allowed), state its origin in origin_note in one sentence, use at most 1 optional extra, and leave mutation_log empty.
-PRIORITY 2 - ONLY IF PRIORITY 1 FAILS. If you cannot find a less common recipe that meets every condition above, do not invent a fake history and do not force a poor match. Instead take the classic baseline and upgrade it with exactly 2 or 3 creative tweaks. Allowed tweak types: a technique or method change (for example cold-steeping, infusing, layering, shaking vs stirring, blending, toasting, gentle warming), a ratio shift, a texture change (frothy, slushy, layered, chilled), or an add-on (at most 2 optional extras, each with a clear flavour purpose). Record each tweak in mutation_log as {change, why}, where "why" says what the tweak does to taste or texture. Give it a fun but readable name that hints at the classic baseline. origin_note must be null.
-Never mix the two paths: a Priority 1 drink has an origin_note and an empty mutation_log, a Priority 2 drink has a mutation_log and a null origin_note.
-TASTE-BALANCE RULES (strict, they apply to both paths and override creativity):
-1. The result must be a drink a normal person would happily finish. Never choose anything mainly for shock value.
-2. Balance sweet, sour, bitter, creamy and intensity. If one is pushed strongly, offset it with another (acid with sweetness, bitterness with cream or sugar, richness with acid or cold).
-3. Every extra and every tweak must pair well with the user's ingredients by flavour. No random or clashing flavours. Few, well-chosen additions beat many.
-4. Keep proportions drinkable. Strong, salty, spicy, bitter or sour items stay in small amounts (pinches, dashes, teaspoons).
-5. Avoid combinations that curdle, separate badly, turn slimy or leave a harsh texture. Dairy with strong acid needs a fix or a different approach.
-6. Avoid solid chunks that make the drink hard to sip, unless used as a garnish or strained out.
-7. If anything might make the drink unpleasant, drop it or tone it down.`,
+  twist: `LEVEL: twist. Goal: less common than the classic answer. Follow this order.
+1) FIRST TRY: a different real drink that is clearly less common than the obvious classic for these ingredients (regional, traditional or niche). Use it only if you are confident it is real, it fits the ingredients in flavour, it is not just a rename of the classic, and it is safe. Then: real name, one-sentence origin_note, at most 1 optional extra, mutation_log empty.
+2) OTHERWISE: take the classic and upgrade it with exactly 2 or 3 tweaks (technique, ratio, texture, or at most 2 optional extras). Put each in mutation_log as {change, why}. Fun but readable name. origin_note null. Never invent a history.
+BALANCE RULES (override creativity): the drink must taste good and be easy to finish. Balance sweet, sour, bitter, creamy and intensity. Every extra must pair well with the user's ingredients. Keep strong items (salt, spice, bitter, sour) to small amounts. Avoid curdling, separation and chunks that block sipping. If unsure, tone it down.`,
 };
 
 const TEMPS = { classic: 0.3, twist: 0.6 };
@@ -211,11 +203,11 @@ export default async (req) => {
   // Several ways to ask, from most precise to most forgiving. Different models support different options.
   const attempts = [
     { messages: [{ role: "system", content: system }, { role: "user", content: userMsg }],
-      extra: { temperature: TEMPS[input.level], response_format: { type: "json_object" }, reasoning: { effort: "low" }, max_tokens: 3000 } },
+      extra: { temperature: TEMPS[input.level], response_format: { type: "json_object" }, reasoning: { effort: "low" }, max_tokens: 1800 } },
     { messages: [{ role: "system", content: system }, { role: "user", content: userMsg }],
-      extra: { temperature: TEMPS[input.level], max_tokens: 3000 } },
+      extra: { temperature: TEMPS[input.level], max_tokens: 1800 } },
     { messages: [{ role: "user", content: `${system}\n\n${userMsg}` }],
-      extra: { max_tokens: 3000 } },
+      extra: { max_tokens: 1800 } },
   ];
 
   const deadline = Date.now() + TOTAL_BUDGET_MS;
@@ -226,7 +218,8 @@ export default async (req) => {
       const left = deadline - Date.now();
       if (left < 3000) break;
 
-      const r = await callAI(key, { model, messages: at.messages, ...at.extra }, left);
+      // Cap each try so a slow answer still leaves time for one simpler retry.
+      const r = await callAI(key, { model, messages: at.messages, ...at.extra }, Math.min(left, 14000));
 
       // Problems that retrying in another form cannot fix.
       if (r.status === 402) return fail(502, "The AI account is out of credit. Please tell the site owner.");
