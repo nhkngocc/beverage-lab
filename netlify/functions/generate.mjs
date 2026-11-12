@@ -99,7 +99,7 @@ async function callAI(key, model, messages, temperature) {
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS);
   try {
-    const payload = { model, messages, max_tokens: 1000 };
+    const payload = { model, messages, max_tokens: 1100 };
     if (temperature !== undefined) payload.temperature = temperature;
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -152,9 +152,10 @@ function parseResult(text, level) {
   const fp = o.flavour_profile;
   if (fp && typeof fp === "object") {
     const keys = ["sweet", "sour", "bitter", "creamy", "intensity"];
-    if (keys.every((k) => typeof fp[k] === "number" && fp[k] >= 0 && fp[k] <= 5)) {
+    const nums = keys.map((k) => Number(fp[k]));
+    if (nums.every((n) => Number.isFinite(n))) {
       r.flavour_profile = {};
-      keys.forEach((k) => (r.flavour_profile[k] = Math.round(fp[k])));
+      keys.forEach((k, i) => (r.flavour_profile[k] = Math.max(0, Math.min(5, Math.round(nums[i])))));
     }
   }
 
@@ -164,7 +165,7 @@ function parseResult(text, level) {
     if (!r.verdict_reason) return null;
   } else {
     // A recipe is required for works / works_with_fix.
-    if (!r.drink_name || !r.ingredients.length || !r.steps.length || !r.flavour_profile) return null;
+    if (!r.drink_name || !r.ingredients.length || !r.steps.length) return null;
   }
   return r;
 }
@@ -205,7 +206,10 @@ export default async (req) => {
 
     const text = r.data?.choices?.[0]?.message?.content;
     const result = parseResult(text, input.level);
-    if (!result) return fail(502, "The lab mixed up its notes. Please try again.");
+    if (!result) {
+      console.error("Unusable AI reply. finish_reason:", r.data?.choices?.[0]?.finish_reason, "length:", String(text || "").length);
+      return fail(502, "The lab mixed up its notes. Please try again.");
+    }
     return reply(200, { ok: true, result });
   } catch (e) {
     if (e && e.name === "AbortError") return fail(504, "That took too long. Please try again.");
