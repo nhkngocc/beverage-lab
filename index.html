@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beverage Combo Lab</title>
+<style>
+:root{--ink:#14202A;--panel:#1E2F3C;--line:#4A6377;--text:#F2EFE6;--muted:#B9C4CC;--paper:#F4EFE3;--pink:#1B1B1B}
+*{box-sizing:border-box}
+body{--acc:#E0A63A;margin:0;font:1rem/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--text);background:radial-gradient(circle at 50% -10%,color-mix(in srgb,var(--acc) 25%,transparent),transparent 55%),var(--ink);transition:background .4s}
+body[data-level=twist]{--acc:#3FC1B0}
+body[data-level=mad]{--acc:#E86BB3}
+h1,h2,h3,.serif{font-family:Georgia,"Palatino Linotype",Palatino,serif}
+header,main{max-width:760px;margin:0 auto;padding:0 16px}
+header{padding-top:28px}
+h1{font-size:clamp(2rem,8vw,3.2rem);line-height:1.05;margin:0 0 6px;color:var(--acc);font-style:italic}
+.sub{margin:0;color:var(--muted);font-size:1.1rem}
+#demo{display:inline-block;margin:12px 0 0;padding:4px 10px;border:1px dashed var(--acc);border-radius:6px;font-size:.9rem}
+section{margin:28px 0}
+h2{font-size:1.4rem;margin:0 0 10px}
+button,input{font:inherit}
+:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.tile{min-height:48px;display:flex;align-items:center;gap:8px;padding:8px 10px;text-align:left;color:var(--text);background:var(--panel);border:2px solid var(--line);border-radius:12px;cursor:pointer}
+.tile[aria-pressed=true]{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 22%,var(--panel));font-weight:600}
+.tile[aria-pressed=true]::after{content:"✓";margin-left:auto}
+.add{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin-top:16px}
+.add label{display:block;width:100%;font-weight:600}
+.add input{flex:1 1 180px;min-height:48px;padding:8px 12px;color:var(--text);background:#0E1820;border:2px solid var(--line);border-radius:10px}
+.btn{min-height:48px;padding:8px 20px;font-weight:700;color:var(--ink);background:var(--acc);border:0;border-radius:10px;cursor:pointer}
+.btn.alt{color:var(--text);background:transparent;border:2px solid var(--acc)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.msg{min-height:1.5em;margin:6px 0 0;color:#FFD9A0}
+.shaker{position:relative;margin:36px auto 8px;max-width:360px;padding:34px 14px 18px;background:linear-gradient(160deg,#2B4254,#1A2A36);border:3px solid var(--acc);border-radius:20px 20px 60px 60px}
+.shaker::before{content:"";position:absolute;top:-22px;left:50%;width:46%;height:26px;transform:translateX(-50%);background:var(--acc);border-radius:14px 14px 4px 4px}
+.shaker::after{content:"★";position:absolute;top:-22px;left:50%;transform:translateX(-50%);width:46%;text-align:center;color:var(--ink);line-height:26px;font-size:.9rem}
+body[data-level=twist] .shaker::after{content:"↻"}
+body[data-level=mad] .shaker::after{content:"⚗"}
+.shaker.shake{animation:shake .5s infinite}
+@keyframes shake{0%,100%{transform:rotate(0)}25%{transform:rotate(-4deg) translateY(-3px)}75%{transform:rotate(4deg) translateY(3px)}}
+.slots{display:grid;gap:8px}
+.slot{min-height:46px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 14px;border-radius:10px;border:2px dashed var(--line);color:var(--muted)}
+.slot.filled{color:var(--text);background:color-mix(in srgb,var(--acc) 20%,var(--panel));border:2px solid var(--acc);cursor:pointer;font-weight:600}
+.slot.drop{animation:drop .45s ease-out}
+@keyframes drop{from{transform:translateY(-40px);opacity:0}to{transform:none;opacity:1}}
+#count{text-align:center;font-weight:700;margin:8px 0 0}
+fieldset{border:0;margin:0;padding:0}
+legend{padding:0;margin-bottom:10px}
+.dial{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.dial input{position:absolute;opacity:0;width:1px;height:1px}
+.dial label{display:block;min-height:48px;padding:10px 12px;background:var(--panel);border:2px solid var(--line);border-radius:12px;cursor:pointer}
+.dial label b{display:block;font-family:Georgia,serif;font-size:1.1rem}
+.dial label span{color:var(--muted);font-size:.9rem}
+.dial input:checked+label{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 22%,var(--panel))}
+.dial input:focus-visible+label{outline:3px solid #fff;outline-offset:2px}
+.go{width:100%;font-size:1.2rem;min-height:56px}
+#status{min-height:1.5em;margin:8px 0 0;text-align:center;color:var(--muted)}
+.ticket{position:relative;color:var(--pink);background:var(--paper);border-radius:6px;padding:22px 20px;border-top:8px dashed var(--acc);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.ticket h3{font-size:1.7rem;margin:0 0 4px}
+.ticket h3:focus{outline:none}
+.ticket .tag{margin:0 0 10px;font-style:italic}
+.ticket h4{margin:16px 0 4px;font-size:1rem}
+.ticket ul,.ticket ol{margin:0;padding-left:22px}
+.stamp{display:inline-block;margin:0 0 12px;padding:2px 12px;font:700 1.1rem Georgia,serif;border:3px solid;border-radius:6px;transform:rotate(-3deg);letter-spacing:.04em}
+.s-works{color:#1E6B3A}.s-works_with_fix{color:#8A5A00}.s-wont_work{color:#A1261F}.s-rejected{color:#55595C}
+.pill{font-size:.8rem;padding:1px 8px;border:1px solid #666;border-radius:99px;margin-left:6px;white-space:nowrap}
+.bars{display:grid;gap:4px}
+.bar{display:grid;grid-template-columns:90px 1fr 40px;gap:8px;align-items:center}
+.bar i{display:block;height:10px;background:#D6CDB6;border-radius:5px;overflow:hidden}
+.bar i b{display:block;height:100%;background:#2D3E4B}
+.note{margin-top:14px;padding:10px;background:#EAE2CC;border-left:4px solid #2D3E4B}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.ticket .btn{color:var(--ink)}
+.ticket .btn.alt{color:var(--pink);border-color:var(--pink)}
+footer{max-width:760px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font-size:.9rem}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.slot.drop,.ticket{animation:fade .4s!important}.stamp{transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+</style>
+</head>
+<body data-level="classic">
+<header>
+  <h1>Beverage Combo Lab</h1>
+  <p class="sub">Got random stuff in the fridge? Let’s turn it into a drink.</p>
+  <p id="demo" hidden>Demo mode: results are built-in samples, no AI is called.</p>
+</header>
+<main>
+  <section aria-labelledby="s1">
+    <h2 id="s1">Step 1: Stock the shelf</h2>
+    <div id="shelf" class="shelf"></div>
+    <form id="addForm" class="add" novalidate>
+      <label for="own">Add your own ingredient</label>
+      <input id="own" type="text" autocomplete="off" placeholder="e.g. cereal, matcha, ginger ale">
+      <button class="btn alt" type="submit">Add</button>
+    </form>
+    <p id="msg" class="msg" aria-live="polite"></p>
+  </section>
+
+  <section aria-labelledby="s1b">
+    <h2 id="s1b">The shaker</h2>
+    <div id="shaker" class="shaker"><div id="slots" class="slots"></div></div>
+    <p id="count" aria-live="polite"></p>
+  </section>
+
+  <section>
+    <fieldset class="dial">
+      <legend><h2 style="margin:0">Step 2: Choose your chaos level</h2></legend>
+      <input type="radio" name="level" id="l-classic" value="classic" checked><label for="l-classic"><b>Classic</b><span>The safe bet. A recipe people actually make.</span></label>
+      <input type="radio" name="level" id="l-twist" value="twist"><label for="l-twist"><b>Plot Twist</b><span>Real drinks you’ve probably never tried.</span></label>
+      <input type="radio" name="level" id="l-mad" value="mad"><label for="l-mad"><b>Mad Scientist</b><span>Invented on the spot. Tasting is at your own risk.</span></label>
+    </fieldset>
+  </section>
+
+  <section>
+    <button id="go" class="btn go" type="button" disabled>Shake it</button>
+    <p id="status" aria-live="polite"></p>
+  </section>
+
+  <section id="resWrap" aria-live="polite"><div id="result"></div></section>
+</main>
+<footer><p>Beverage Combo Lab is for drinks only. Alcohol is for adults of legal drinking age.</p></footer>
+
+<script>
+const $=s=>document.querySelector(s);
+function el(t,txt,cls){const e=document.createElement(t);if(txt!=null)e.textContent=txt;if(cls)e.className=cls;return e}
+const MOCK=new URLSearchParams(location.search).get("mock")==="1"||location.protocol==="file:";
+const LEVELS={classic:"Classic",twist:"Plot Twist",mad:"Mad Scientist"};
+const SHELF=[["🍵","Black tea"],["🌿","Green tea"],["☕","Coffee"],["🥛","Milk"],["🌾","Oat milk"],["🥣","Yogurt"],["🍪","Cookies"],["🍫","Chocolate"],["🍷","Red wine"],["🍺","Beer"],["🍊","Orange juice"],["🍋","Lemon"],["🟢","Lime"],["🍯","Honey"],["🌰","Ginger"],["🌱","Mint"],["🥤","Cola"],["💧","Sparkling water"],["🍌","Banana"],["🍓","Strawberries"],["🥥","Coconut water"]];
+const STAMPS={
+  works:{classic:"APPROVED",twist:"APPROVED WITH A TWIST",mad:"LAB APPROVED"},
+  works_with_fix:{classic:"APPROVED WITH A TWEAK",twist:"TWISTED AND TWEAKED",mad:"FIXED IN THE LAB"},
+  wont_work:{classic:"NOPE",twist:"PLOT TWIST: NOPE",mad:"EXPERIMENT FAILED"}
+};
+STAMPS.rejected=STAMPS.wont_work;
+let ings=[],level="classic",lastAdded=-1,busy=false,last=null,timer=null;
+if(MOCK)$("#demo").hidden=false;
+
+const has=n=>ings.some(x=>x.toLowerCase()===n.toLowerCase());
+function say(t){$("#msg").textContent=t}
+
+function check(raw){
+  const v=raw.trim().replace(/\s+/g," ");
+  if(!v)return["","Type an ingredient first."];
+  if(v.length>30)return["","Keep it to 30 characters or fewer."];
+  if(!/^[\p{L}\p{N} '’&.-]+$/u.test(v))return["","Use letters, numbers and spaces only (no emoji or symbols)."];
+  if(has(v))return["",v+" is already in the shaker."];
+  if(ings.length>=5)return["","The shaker is full. Tap an ingredient in it to remove one."];
+  return[v,""];
+}
+function add(raw){
+  const[v,err]=check(raw);
+  if(err){say(err);return false}
+  ings.push(v);lastAdded=ings.length-1;say("");render();return true;
+}
+function removeAt(i){say(ings[i]+" removed.");ings.splice(i,1);lastAdded=-1;render()}
+
+function render(){
+  document.querySelectorAll(".tile").forEach(b=>b.setAttribute("aria-pressed",has(b.dataset.n)));
+  const slots=$("#slots");slots.replaceChildren();
+  for(let i=0;i<5;i++){
+    if(ings[i]){
+      const b=el("button",null,"slot filled"+(i===lastAdded?" drop":""));b.type="button";
+      b.append(el("span",ings[i]));const x=el("span","✕");x.setAttribute("aria-hidden","true");b.append(x);
+      b.setAttribute("aria-label","Remove "+ings[i]);b.onclick=()=>removeAt(i);slots.append(b);
+    }else{const d=el("div","Empty slot","slot");d.setAttribute("aria-hidden","true");slots.append(d)}
+  }
+  const n=ings.length;
+  $("#count").textContent=n<2?"Add "+(2-n)+" more":n<5?"Ready to shake ("+n+"/5)":"Shaker full (5/5)";
+  $("#go").disabled=n<2||busy;
+}
+
+SHELF.forEach(([e,n])=>{
+  const b=el("button",null,"tile");b.type="button";b.dataset.n=n;b.setAttribute("aria-pressed","false");
+  const s=el("span",e);s.setAttribute("aria-hidden","true");b.append(s,el("span",n));
+  b.onclick=()=>{if(has(n)){removeAt(ings.findIndex(x=>x.toLowerCase()===n.toLowerCase()))}else add(n)};
+  $("#shelf").append(b);
+});
+$("#addForm").addEventListener("submit",e=>{e.preventDefault();if(add($("#own").value))$("#own").value=""});
+document.querySelectorAll("input[name=level]").forEach(r=>r.addEventListener("change",()=>{level=r.value;document.body.dataset.level=level}));
+
+/* ---------- demo samples ---------- */
+function mock(){
+  const n={fix:1,wont:2,rejected:3}[new URLSearchParams(location.search).get("verdict")]||0,list=ings.slice();
+  const base={verdict:"works",verdict_reason:"",level,drink_name:null,tagline:null,temperature:null,contains_alcohol:false,ingredients:[],steps:[],flavour_profile:null,why_it_works:null,origin_note:null,mutation_log:[],unused_ingredients:[],fix_suggestion:null,zero_proof_swap:null,safety_note:null};
+  const mk=()=>list.map(x=>({item:x,amount:"about 100 ml or 1 portion",from_user:true,optional:false}));
+  if(n===0){
+    const names={classic:["Milk Tea","A familiar drink you can order anywhere."],twist:["Cousin of the Pulled Tea","A lesser-known drink with a story."],mad:["The Biscuit Paradox","Invented five minutes ago."]}[level];
+    return Object.assign(base,{verdict_reason:"Sample result: these ingredients get along well.",drink_name:names[0],tagline:names[1],temperature:level==="mad"?"cold":"hot",ingredients:mk().concat([{item:"Sugar",amount:"1 tsp",from_user:false,optional:true}]),
+      steps:["Warm or chill your ingredients as needed.","Combine everything in the shaker.","Shake or stir for 20 seconds.","Taste, then add sugar if you like.","Pour and serve."],
+      flavour_profile:{sweet:3,sour:level==="mad"?4:1,bitter:2,creamy:level==="classic"?4:2,intensity:level==="mad"?5:3},why_it_works:"Sample text: creamy and bitter notes balance each other.",
+      origin_note:level==="twist"?"Sample note: a drink with roots in a specific region and era.":null,
+      mutation_log:level==="mad"?[{change:"Doubled the sour",why:"To cut the sweetness."},{change:"Frozen into ice cubes",why:"So it changes flavour as it melts."}]:[]});
+  }
+  if(n===1)return Object.assign(base,{verdict:"works_with_fix",verdict_reason:"Sample result: good idea, but it needs a small tweak.",drink_name:"Tweaked Evening Sipper",tagline:"Almost perfect.",temperature:"cold",contains_alcohol:true,ingredients:mk(),steps:["Chill all ingredients.","Stir gently, do not shake hard.","Pour over ice."],
+    flavour_profile:{sweet:3,sour:2,bitter:1,creamy:3,intensity:2},why_it_works:"Sample text: sweetness softens the sharp edges.",fix_suggestion:"Add a pinch of sugar and stir slowly so nothing curdles.",zero_proof_swap:"Swap the alcohol for the same amount of grape juice.",safety_note:"For adults of legal drinking age only. Drink responsibly."});
+  if(n===2)return Object.assign(base,{verdict:"wont_work",verdict_reason:"Sample result: this combination would separate and taste unpleasant.",fix_suggestion:"Try swapping one ingredient for something less acidic, like honey."});
+  return Object.assign(base,{verdict:"rejected",verdict_reason:"Sample result: this lab only makes drinks from edible ingredients.",unused_ingredients:list.map(x=>({item:x,reason:"Sample reason: not a drink ingredient."}))});
+}
+
+/* ---------- real call (wired up for Stage 2) ---------- */
+async function call(){
+  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),20000);
+  let res,data;
+  try{
+    res=await fetch("/.netlify/functions/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ingredients:ings,level}),signal:ctl.signal});
+  }catch(e){
+    throw new Error(e.name==="AbortError"?"That took too long. Please try again.":"Couldn’t reach the lab. Check your internet connection and try again.");
+  }finally{clearTimeout(t)}
+  try{data=await res.json()}catch(e){data=null}
+  if(!res.ok||!data||!data.ok)throw new Error((data&&data.error)||"Something went wrong. Please try again.");
+  return data.result;
+}
+
+/* ---------- go ---------- */
+const LOAD=["Consulting the bartender...","Tasting in my head...","Checking nothing explodes...","Polishing the glass..."];
+async function go(){
+  if(busy||ings.length<2)return;
+  const lv=level;busy=true;render();$("#result").replaceChildren();
+  $("#shaker").classList.add("shake");
+  let k=0;$("#status").textContent=LOAD[0];
+  timer=setInterval(()=>{k=(k+1)%LOAD.length;$("#status").textContent=LOAD[k]},2000);
+  try{
+    const r=MOCK?await new Promise(ok=>setTimeout(()=>ok(mock()),1400)):await call();
+    last=r;showResult(r,lv);
+  }catch(e){showError(e.message)}
+  finally{clearInterval(timer);$("#status").textContent="";$("#shaker").classList.remove("shake");busy=false;render()}
+}
+$("#go").onclick=go;
+
+function showError(m){
+  const c=el("div",null,"ticket");const h=el("h3","Something went wrong");h.tabIndex=-1;
+  const retry=el("button","Try again","btn");retry.type="button";retry.onclick=go;
+  c.append(h,el("p",m),retry);$("#result").replaceChildren(c);h.focus();
+}
+
+function showResult(r,lv){
+  const c=el("div",null,"ticket");
+  const h=el("h3",r.drink_name||"No drink this time");h.tabIndex=-1;
+  c.append(el("p",STAMPS[r.verdict][lv],"stamp s-"+(r.verdict==="rejected"?"wont_work":r.verdict)));
+  c.append(h);
+  if(r.tagline)c.append(el("p",r.tagline,"tag"));
+  c.append(el("p",r.verdict_reason));
+  const ok=r.verdict==="works"||r.verdict==="works_with_fix";
+  if(ok){
+    if(r.temperature)c.append(el("p","Served: "+r.temperature));
+    if(r.fix_suggestion)c.append(el("div","The tweak: "+r.fix_suggestion,"note"));
+    c.append(el("h4","Ingredients"));
+    const ul=el("ul");
+    r.ingredients.forEach(i=>{const li=el("li",i.amount+" "+i.item);li.append(el("span",i.from_user?"yours":"extra"+(i.optional?", optional":""),"pill"));ul.append(li)});
+    c.append(ul,el("h4","Steps"));
+    const ol=el("ol");r.steps.forEach(s=>ol.append(el("li",s)));c.append(ol);
+    if(r.flavour_profile){
+      c.append(el("h4","Flavour profile"));const bars=el("div",null,"bars");
+      Object.entries(r.flavour_profile).forEach(([k,v])=>{
+        const row=el("div",null,"bar");row.append(el("span",k));
+        const t=el("i");const f=el("b");f.style.width=(v*20)+"%";t.append(f);row.append(t,el("span",v+"/5"));bars.append(row);
+      });c.append(bars);
+    }
+    if(r.why_it_works)c.append(el("h4","Why it works"),el("p",r.why_it_works));
+    if(r.origin_note)c.append(el("h4","Origin"),el("p",r.origin_note));
+    if(r.mutation_log.length){c.append(el("h4","Mutation log"));const m=el("ul");r.mutation_log.forEach(x=>m.append(el("li",x.change+" — "+x.why)));c.append(m)}
+  }else if(r.fix_suggestion){
+    c.append(el("div","Try this instead: "+r.fix_suggestion,"note"));
+  }
+  if(r.unused_ingredients.length){c.append(el("h4","Left out"));const u=el("ul");r.unused_ingredients.forEach(x=>u.append(el("li",x.item+": "+x.reason)));c.append(u)}
+  if(r.safety_note)c.append(el("div",r.safety_note,"note"));
+  if(r.zero_proof_swap)c.append(el("div","Zero-proof swap: "+r.zero_proof_swap,"note"));
+  const acts=el("div",null,"acts");
+  if(ok){const cp=el("button","Copy recipe","btn");cp.type="button";cp.onclick=copyRecipe;acts.append(cp)}
+  const again=el("button","Try another level","btn alt");again.type="button";
+  again.onclick=()=>{const f=document.querySelector("input[name=level]:checked");f.scrollIntoView({behavior:"smooth",block:"center"});f.focus()};
+  acts.append(again);c.append(acts);
+  $("#result").replaceChildren(c);h.focus();
+}
+
+async function copyRecipe(){
+  const r=last;if(!r)return;
+  const t=[r.drink_name+" ("+LEVELS[r.level||level]+")",r.tagline||"","","Ingredients:"]
+    .concat(r.ingredients.map(i=>"- "+i.amount+" "+i.item),["","Steps:"],r.steps.map((s,i)=>(i+1)+". "+s));
+  if(r.safety_note)t.push("",r.safety_note);
+  try{await navigator.clipboard.writeText(t.join("\n"));$("#status").textContent="Recipe copied."}
+  catch(e){$("#status").textContent="Couldn’t copy. Select the recipe text and copy it by hand."}
+}
+
+render();
+</script>
+</body>
+</html>
