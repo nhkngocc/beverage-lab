@@ -198,7 +198,7 @@ function mock(){
 
 /* ---------- real call (wired up for Stage 2) ---------- */
 async function call(){
-  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),20000);
+  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),30000);
   let res,data;
   try{
     res=await fetch("/.netlify/functions/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ingredients:ings,level}),signal:ctl.signal});
