@@ -9,7 +9,6 @@
 *{box-sizing:border-box}
 body{--acc:#E0A63A;margin:0;font:1rem/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--text);background:radial-gradient(circle at 50% -10%,color-mix(in srgb,var(--acc) 25%,transparent),transparent 55%),var(--ink);transition:background .4s}
 body[data-level=twist]{--acc:#3FC1B0}
-body[data-level=mad]{--acc:#E86BB3}
 h1,h2,h3,.serif{font-family:Georgia,"Palatino Linotype",Palatino,serif}
 header,main{max-width:760px;margin:0 auto;padding:0 16px}
 header{padding-top:28px}
@@ -35,7 +34,6 @@ button,input{font:inherit}
 .shaker::before{content:"";position:absolute;top:-22px;left:50%;width:46%;height:26px;transform:translateX(-50%);background:var(--acc);border-radius:14px 14px 4px 4px}
 .shaker::after{content:"★";position:absolute;top:-22px;left:50%;transform:translateX(-50%);width:46%;text-align:center;color:var(--ink);line-height:26px;font-size:.9rem}
 body[data-level=twist] .shaker::after{content:"↻"}
-body[data-level=mad] .shaker::after{content:"⚗"}
 .shaker.shake{animation:shake .5s infinite}
 @keyframes shake{0%,100%{transform:rotate(0)}25%{transform:rotate(-4deg) translateY(-3px)}75%{transform:rotate(4deg) translateY(3px)}}
 .slots{display:grid;gap:8px}
@@ -103,10 +101,9 @@ footer{max-width:760px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
 
   <section>
     <fieldset class="dial">
-      <legend><h2 style="margin:0">Step 2: Choose your chaos level</h2></legend>
-      <input type="radio" name="level" id="l-classic" value="classic" checked><label for="l-classic"><b>Classic</b><span>The safe bet. A recipe people actually make.</span></label>
-      <input type="radio" name="level" id="l-twist" value="twist"><label for="l-twist"><b>Plot Twist</b><span>Real drinks you’ve probably never tried.</span></label>
-      <input type="radio" name="level" id="l-mad" value="mad"><label for="l-mad"><b>Mad Scientist</b><span>Invented on the spot. Tasting is at your own risk.</span></label>
+      <legend><h2 style="margin:0">Step 2: Choose your style</h2></legend>
+      <input type="radio" name="level" id="l-classic" value="classic" checked><label for="l-classic"><b>Classic</b><span>The famous drink everyone knows by name.</span></label>
+      <input type="radio" name="level" id="l-twist" value="twist"><label for="l-twist"><b>Plot Twist</b><span>A lesser-known drink, or a creative upgrade of the classic. Always balanced.</span></label>
     </fieldset>
   </section>
 
@@ -123,12 +120,12 @@ footer{max-width:760px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
 const $=s=>document.querySelector(s);
 function el(t,txt,cls){const e=document.createElement(t);if(txt!=null)e.textContent=txt;if(cls)e.className=cls;return e}
 const MOCK=new URLSearchParams(location.search).get("mock")==="1"||location.protocol==="file:";
-const LEVELS={classic:"Classic",twist:"Plot Twist",mad:"Mad Scientist"};
+const LEVELS={classic:"Classic",twist:"Plot Twist"};
 const SHELF=[["🍵","Black tea"],["🌿","Green tea"],["☕","Coffee"],["🥛","Milk"],["🌾","Oat milk"],["🥣","Yogurt"],["🍪","Cookies"],["🍫","Chocolate"],["🍷","Red wine"],["🍺","Beer"],["🍊","Orange juice"],["🍋","Lemon"],["🟢","Lime"],["🍯","Honey"],["🌰","Ginger"],["🌱","Mint"],["🥤","Cola"],["💧","Sparkling water"],["🍌","Banana"],["🍓","Strawberries"],["🥥","Coconut water"]];
 const STAMPS={
-  works:{classic:"APPROVED",twist:"APPROVED WITH A TWIST",mad:"LAB APPROVED"},
-  works_with_fix:{classic:"APPROVED WITH A TWEAK",twist:"TWISTED AND TWEAKED",mad:"FIXED IN THE LAB"},
-  wont_work:{classic:"NOPE",twist:"PLOT TWIST: NOPE",mad:"EXPERIMENT FAILED"}
+  works:{classic:"APPROVED",twist:"APPROVED WITH A TWIST"},
+  works_with_fix:{classic:"APPROVED WITH A TWEAK",twist:"TWISTED AND TWEAKED"},
+  wont_work:{classic:"NOPE",twist:"PLOT TWIST: NOPE"}
 };
 STAMPS.rejected=STAMPS.wont_work;
 let ings=[],level="classic",lastAdded=-1,busy=false,last=null,timer=null;
@@ -183,12 +180,12 @@ function mock(){
   const base={verdict:"works",verdict_reason:"",level,drink_name:null,tagline:null,temperature:null,contains_alcohol:false,ingredients:[],steps:[],flavour_profile:null,why_it_works:null,origin_note:null,mutation_log:[],unused_ingredients:[],fix_suggestion:null,zero_proof_swap:null,safety_note:null};
   const mk=()=>list.map(x=>({item:x,amount:"about 100 ml or 1 portion",from_user:true,optional:false}));
   if(n===0){
-    const names={classic:["Milk Tea","A familiar drink you can order anywhere."],twist:["Cousin of the Pulled Tea","A lesser-known drink with a story."],mad:["The Biscuit Paradox","Invented five minutes ago."]}[level];
-    return Object.assign(base,{verdict_reason:"Sample result: these ingredients get along well.",drink_name:names[0],tagline:names[1],temperature:level==="mad"?"cold":"hot",ingredients:mk().concat([{item:"Sugar",amount:"1 tsp",from_user:false,optional:true}]),
+    const names={classic:["Milk Tea","A familiar drink you can order anywhere."],twist:["Smoky Honey Milk Tea","A familiar friend with a clever twist."]}[level];
+    return Object.assign(base,{verdict_reason:"Sample result: these ingredients get along well.",drink_name:names[0],tagline:names[1],temperature:"hot",ingredients:mk().concat([{item:"Sugar",amount:"1 tsp",from_user:false,optional:true}]),
       steps:["Warm or chill your ingredients as needed.","Combine everything in the shaker.","Shake or stir for 20 seconds.","Taste, then add sugar if you like.","Pour and serve."],
-      flavour_profile:{sweet:3,sour:level==="mad"?4:1,bitter:2,creamy:level==="classic"?4:2,intensity:level==="mad"?5:3},why_it_works:"Sample text: creamy and bitter notes balance each other.",
-      origin_note:level==="twist"?"Sample note: a drink with roots in a specific region and era.":null,
-      mutation_log:level==="mad"?[{change:"Doubled the sour",why:"To cut the sweetness."},{change:"Frozen into ice cubes",why:"So it changes flavour as it melts."}]:[]});
+      flavour_profile:{sweet:3,sour:1,bitter:2,creamy:level==="classic"?4:2,intensity:3},why_it_works:"Sample text: creamy and bitter notes balance each other.",
+      origin_note:null,
+      mutation_log:level==="twist"?[{change:"Steeped the tea in warm milk",why:"Smoother, creamier taste."},{change:"Added a pinch of cinnamon",why:"Warm spice that suits the sweetness."}]:[]});
   }
   if(n===1)return Object.assign(base,{verdict:"works_with_fix",verdict_reason:"Sample result: good idea, but it needs a small tweak.",drink_name:"Tweaked Evening Sipper",tagline:"Almost perfect.",temperature:"cold",contains_alcohol:true,ingredients:mk(),steps:["Chill all ingredients.","Stir gently, do not shake hard.","Pour over ice."],
     flavour_profile:{sweet:3,sour:2,bitter:1,creamy:3,intensity:2},why_it_works:"Sample text: sweetness softens the sharp edges.",fix_suggestion:"Add a pinch of sugar and stir slowly so nothing curdles.",zero_proof_swap:"Swap the alcohol for the same amount of grape juice.",safety_note:"For adults of legal drinking age only. Drink responsibly."});
@@ -257,7 +254,7 @@ function showResult(r,lv){
     }
     if(r.why_it_works)c.append(el("h4","Why it works"),el("p",r.why_it_works));
     if(r.origin_note)c.append(el("h4","Origin"),el("p",r.origin_note));
-    if(r.mutation_log.length){c.append(el("h4","Mutation log"));const m=el("ul");r.mutation_log.forEach(x=>m.append(el("li",x.change+" — "+x.why)));c.append(m)}
+    if(r.mutation_log.length){c.append(el("h4","What we twisted"));const m=el("ul");r.mutation_log.forEach(x=>m.append(el("li",x.change+" — "+x.why)));c.append(m)}
   }else if(r.fix_suggestion){
     c.append(el("div","Try this instead: "+r.fix_suggestion,"note"));
   }
