@@ -105,6 +105,17 @@ function validateInput(body) {
 }
 
 // ---------- calling OpenRouter ----------
+// OpenRouter can pad a slow reply with keep-alive lines (for example ": OPENROUTER PROCESSING") before the JSON.
+// A plain res.json() fails on that, so read the body as text and pull the JSON out of it.
+function readJsonBody(raw) {
+  const cleaned = String(raw || "").split("\n").filter((l) => !l.trim().startsWith(":")).join("\n").trim();
+  if (!cleaned) return null;
+  try { return JSON.parse(cleaned); } catch { /* try the slice below */ }
+  const a = cleaned.indexOf("{"), b = cleaned.lastIndexOf("}");
+  if (a !== -1 && b > a) { try { return JSON.parse(cleaned.slice(a, b + 1)); } catch { /* give up */ } }
+  return null;
+}
+
 async function callAI(key, payload, timeoutMs) {
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), timeoutMs);
@@ -115,9 +126,8 @@ async function callAI(key, payload, timeoutMs) {
       body: JSON.stringify(payload),
       signal: ctl.signal,
     });
-    let data = null;
-    try { data = await res.json(); } catch { /* not JSON */ }
-    return { status: res.status, data };
+    const raw = await res.text();
+    return { status: res.status, data: readJsonBody(raw), raw };
   } finally {
     clearTimeout(timer);
   }
@@ -300,10 +310,18 @@ export default async (req) => {
     if (r.status === 401 || r.status === 403) return fail(500, "Server key problem. Please tell the site owner.", `try${n + 1}: HTTP ${r.status}`);
 
     if (r.status < 200 || r.status >= 300 || r.data?.error) {
-      const msg = String(r.data?.error?.message || r.data?.error || "").slice(0, 140);
+      const msg = String(r.data?.error?.message || r.data?.error || r.raw || "").replace(/\s+/g, " ").slice(0, 140);
       notes.push(`try${n + 1}: HTTP ${r.status}${msg ? " " + msg : ""}`);
       if (r.status === 429) { userError = "The AI is busy right now. Please try again in a moment."; status = 429; }
       else { userError = "The lab is having trouble. Please try again."; status = 502; }
+      continue;
+    }
+
+    if (!r.data) {
+      // HTTP 200 but nothing we can read: record how the body starts so the cause is visible.
+      notes.push(`try${n + 1}: HTTP 200 but unreadable body, starts: ${JSON.stringify(String(r.raw || "").slice(0, 80))}`);
+      userError = "The lab mixed up its notes. Please try again.";
+      status = 502;
       continue;
     }
 
@@ -313,12 +331,13 @@ export default async (req) => {
     if (!parsed.r && !content.trim() && reasoning) parsed = parseResult(reasoning, input.level); // last resort
     if (parsed.r) return reply(200, { ok: true, result: parsed.r });
 
-    notes.push(`try${n + 1}: ${parsed.why}, finish=${finish}, text=${content.length}, thinking=${reasoning.length}`);
+    const shape = `keys=${Object.keys(r.data).join("/")}, choices=${Array.isArray(r.data.choices) ? r.data.choices.length : "none"}, tokens=${r.data.usage?.completion_tokens ?? "?"}, model=${String(r.data.model || "?").slice(0, 40)}`;
+    notes.push(`try${n + 1}: ${parsed.why}, finish=${finish}, text=${content.length}, thinking=${reasoning.length}, ${shape}`);
     userError = "The lab mixed up its notes. Please try again.";
     status = 502;
   }
 
-  const detail = notes.join(" | ").slice(0, 400);
+  const detail = notes.join(" | ").slice(0, 600);
   console.error("Generate failed:", detail);
   return fail(status, userError, detail);
 };
