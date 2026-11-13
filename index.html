@@ -85,29 +85,37 @@ legend{padding:0;margin-bottom:10px}
 .ticket h3{font-size:1.7rem;margin:0 0 4px}
 .ticket h3:focus{outline:none}
 .ticket .tag{margin:0 0 10px;font-style:italic}
-.ticket h4{margin:16px 0 4px;font-size:1rem}
-.ticket ul,.ticket ol{margin:0;padding-left:22px}
 .stamp{display:inline-block;margin:0 0 12px;padding:2px 12px;font:700 1.1rem Georgia,serif;border:3px solid;border-radius:6px;transform:rotate(-3deg);letter-spacing:.04em}
 .s-works{color:#1E6B3A}.s-works_with_fix{color:#8A5A00}.s-wont_work{color:#A1261F}
 .unavail{margin:0 0 8px;font-weight:700;font-size:1.1rem}
-.pill{font-size:.8rem;padding:1px 8px;border:1px solid #666;border-radius:99px;margin-left:6px;white-space:nowrap}
 .bars{display:grid;gap:4px}
+.plain{margin:0;padding-left:22px}
 .bar{display:grid;grid-template-columns:90px 1fr 40px;gap:8px;align-items:center}
 .bar i{display:block;height:10px;background:#D6CDB6;border-radius:5px;overflow:hidden}
 .bar i b{display:block;height:100%;background:#2D3E4B}
 .bar span:first-child{text-transform:capitalize}
 
-/* ratio chart */
-.stack{display:flex;height:26px;border-radius:8px;overflow:hidden;background:#D6CDB6;border:1px solid #B9AE92}
-.stack span{display:block;height:100%;min-width:3px}
-.stack span+span{border-left:2px solid var(--paper)}
-.legend{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
-.legend li{display:grid;grid-template-columns:14px minmax(0,1fr) 44px;gap:8px;align-items:center}
-.legend .sw{width:14px;height:14px;border-radius:4px}
-.legend .nm{overflow-wrap:anywhere}
-.legend .nm small{color:#555}
-.legend .pc{text-align:right;font-weight:700}
-.chartnote{margin:6px 0 0;font-size:.85rem;color:#555}
+/* result card: chips, ingredient cards, steps */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;font-weight:600;font-size:.9rem;background:#E7DFC9;border-radius:99px}
+.sec{display:flex;align-items:center;gap:10px;margin:26px 0 10px;font:700 1.25rem Georgia,serif}
+.sec::before{content:"";width:6px;height:1.2em;border-radius:3px;background:var(--acc)}
+.sec small{font:400 .9rem system-ui,sans-serif;color:#555}
+.ings{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.ing{display:grid;grid-template-columns:48px minmax(0,1fr);grid-template-areas:"i n" "i a";column-gap:12px;align-items:center;padding:10px 12px;background:#fff;border:2px solid #1B1B1B;border-radius:14px;box-shadow:3px 3px 0 #1B1B1B}
+.ing.extra{border-style:dashed;box-shadow:none;background:#FBF8EF}
+.ing .ico{grid-area:i;display:grid;place-items:center;width:48px;height:48px;font-size:1.7rem;background:color-mix(in srgb,var(--acc) 30%,#fff);border-radius:12px}
+.ing .nm{grid-area:n;font-weight:700;font-size:1.05rem;line-height:1.2;overflow-wrap:anywhere}
+.ing .nm small{display:block;font-weight:400;font-size:.8rem;color:#666}
+.ing .amt{grid-area:a;font-size:.95rem;color:#333}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:st}
+.steps li{counter-increment:st;display:grid;grid-template-columns:38px minmax(0,1fr);gap:12px;align-items:center;padding:12px 14px;background:#fff;border-radius:14px;border:2px solid #D9CFB5;font-size:1.05rem;line-height:1.4}
+.steps li::before{content:counter(st);display:grid;place-items:center;width:38px;height:38px;font:700 1.15rem Georgia,serif;color:#fff;background:#1B1B1B;border-radius:50%}
+.hl{font-weight:700;background:color-mix(in srgb,var(--acc) 45%,transparent);padding:0 4px;border-radius:4px}
+.lead{font-size:1.1rem;margin:0 0 12px}
+.ticket .hint{margin:0 0 8px;color:#555;font-weight:700;font-size:.9rem}
+.ticket .ings+.hint{margin-top:16px}
+.fun{font-size:1.05rem;line-height:1.55;margin:0}
 
 .note{margin-top:14px;padding:10px;background:#EAE2CC;border-left:4px solid #2D3E4B}
 .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
@@ -128,7 +136,7 @@ footer{max-width:760px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
   <ol class="how">
     <li><b>Pick what you have</b>Choose 2 to 5 drink ingredients, or type your own.</li>
     <li><b>Choose your style</b>Classic is a drink everyone knows. Plot Twist is something less usual.</li>
-    <li><b>Shake it</b>Get a balanced recipe, or a clear answer if the mix isn’t on the menu.</li>
+    <li><b>Shake it</b>Get an easy recipe, or a friendly “nope” if the mix just won’t work.</li>
   </ol>
 </header>
 <main>
@@ -150,12 +158,6 @@ footer{max-width:760px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
     <div id="cats"></div>
   </section>
 
-  <section aria-labelledby="s1b">
-    <h2 id="s1b">Your shaker</h2>
-    <div id="shaker" class="shaker"><div id="slots" class="slots"></div></div>
-    <p id="count" aria-live="polite"></p>
-  </section>
-
   <section>
     <fieldset class="dial">
       <legend><h2 style="margin:0">Step 2: How adventurous are you?</h2></legend>
@@ -164,8 +166,12 @@ footer{max-width:760px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
     </fieldset>
   </section>
 
-  <section>
-    <button id="go" class="btn go" type="button" disabled>Shake it</button>
+  <section aria-labelledby="s3">
+    <h2 id="s3">Step 3: Shake it!</h2>
+    <p class="hint">Your shaker holds everything you picked. Tap an ingredient inside to take it out.</p>
+    <div id="shaker" class="shaker"><div id="slots" class="slots"></div></div>
+    <p id="count" aria-live="polite"></p>
+    <button id="go" class="btn go" type="button" disabled style="margin-top:14px">Shake it</button>
     <p id="status" aria-live="polite"></p>
   </section>
 
@@ -316,16 +322,16 @@ document.querySelectorAll("input[name=level]").forEach(r=>r.addEventListener("ch
 function mock(){
   const n={fix:1,wont:2,rejected:3}[new URLSearchParams(location.search).get("verdict")]||0,list=ings.slice();
   const base={verdict:"works",verdict_reason:"",level,drink_name:null,tagline:null,temperature:null,contains_alcohol:false,ingredients:[],steps:[],flavour_profile:null,why_it_works:null,origin_note:null,mutation_log:[],unused_ingredients:[],fix_suggestion:null,zero_proof_swap:null,safety_note:null};
-  const mk=()=>list.map((x,i)=>({item:x,amount:[150,100,50,30,20][i]+" ml",ml:[150,100,50,30,20][i],from_user:true,optional:false}));
+  const mk=()=>list.map((x,i)=>({item:x,amount:[150,100,50,30,20][i]+" ml",from_user:true,optional:false}));
   if(n===0){
     const names={classic:["Milk Tea","A familiar drink you can order anywhere."],twist:["Smoky Honey Milk Tea","A familiar friend with a clever twist."]}[level];
-    return Object.assign(base,{verdict_reason:"Sample result: these ingredients get along well.",drink_name:names[0],tagline:names[1],temperature:"hot",ingredients:mk().concat([{item:"Sugar",amount:"1 tsp",ml:5,from_user:false,optional:true},{item:"Ice",amount:"4 cubes",ml:null,from_user:false,optional:true}]),
+    return Object.assign(base,{verdict_reason:"Sample result: these ingredients get along well.",drink_name:names[0],tagline:names[1],temperature:"hot",ingredients:mk().concat([{item:"Sugar",amount:"1 tsp",from_user:false,optional:true},{item:"Ice",amount:"4 cubes",from_user:false,optional:true}]),
       steps:["Warm or chill your ingredients as needed.","Combine everything in the shaker.","Shake or stir for 20 seconds.","Taste, then add sugar if you like.","Pour and serve."],
-      flavour_profile:{sweet:3,sour:1,bitter:2,creamy:level==="classic"?4:2,intensity:3},why_it_works:"Sample text: creamy and bitter notes balance each other.",
+      flavour_profile:{sweet:3,sour:1,bitter:2,creamy:level==="classic"?4:2,intensity:3},why_it_works:"Sample text: the creamy bits calm down the bitter bits, so every sip stays smooth.",
       mutation_log:level==="twist"?[{change:"Steeped the tea in warm milk",why:"Smoother, creamier taste."},{change:"Added a pinch of cinnamon",why:"Warm spice that suits the sweetness."}]:[]});
   }
   if(n===1)return Object.assign(base,{verdict:"works_with_fix",verdict_reason:"Sample result: good idea, but it needs a small tweak.",drink_name:"Tweaked Evening Sipper",tagline:"Almost perfect.",temperature:"cold",contains_alcohol:true,ingredients:mk(),steps:["Chill all ingredients.","Stir gently, do not shake hard.","Pour over ice."],
-    flavour_profile:{sweet:3,sour:2,bitter:1,creamy:3,intensity:2},why_it_works:"Sample text: sweetness softens the sharp edges.",fix_suggestion:"Add a pinch of sugar and stir slowly so nothing curdles.",zero_proof_swap:"Swap the alcohol for the same amount of grape juice.",safety_note:"For adults of legal drinking age only. Drink responsibly."});
+    flavour_profile:{sweet:3,sour:2,bitter:1,creamy:3,intensity:2},why_it_works:"Sample text: a little sweetness softens the sharp edges.",fix_suggestion:"Add a pinch of sugar and stir slowly so nothing curdles.",zero_proof_swap:"Swap the alcohol for the same amount of grape juice.",safety_note:"For adults of legal drinking age only. Drink responsibly."});
   if(n===2)return Object.assign(base,{verdict:"wont_work",verdict_reason:"Sample result: this combination would separate and taste unpleasant.",fix_suggestion:"Try swapping one ingredient for something less acidic, like honey."});
   return Object.assign(base,{verdict:"rejected",verdict_reason:"Sample result: this lab only makes drinks from drink ingredients.",unused_ingredients:list.map(x=>({item:x,reason:"Sample reason: not a drink ingredient."}))});
 }
@@ -371,32 +377,41 @@ function showError(m,detail){
   $("#result").replaceChildren(c);h.focus();
 }
 
-/* ---------- the ratio chart: shares come straight from each ingredient's volume ---------- */
-const COLORS=["#2D6A8F","#D18B1F","#3E8E6E","#B5483A","#7A5BA6","#5F6B73","#B0517F","#7C8B2E"];
-function ratioData(list){
-  const items=list.filter(i=>Number.isFinite(i.ml)&&i.ml>0);
-  if(items.length<2)return null;
-  const total=items.reduce((s,i)=>s+i.ml,0);
-  const exact=items.map(i=>i.ml/total*100);
-  const pct=exact.map(Math.floor);let rem=100-pct.reduce((a,b)=>a+b,0);
-  exact.map((v,k)=>[v-pct[k],k]).sort((a,b)=>b[0]-a[0]).slice(0,rem).forEach(([,k])=>pct[k]++);
-  return items.map((i,k)=>({item:i.item,amount:i.amount,pct:pct[k],exact:exact[k]}));
+/* ---------- icons: use the AI's emoji if it is a real emoji, else guess one ---------- */
+const ICONS=new Map();CATS.forEach(c=>c.items.forEach(([e,n])=>ICONS.set(n.toLowerCase(),e)));
+const KEYWORDS=[["ice","🧊"],["sugar","🍬"],["syrup","🍯"],["honey","🍯"],["milk","🥛"],["cream","🍦"],["coffee","☕"],["espresso","☕"],["tea","🍵"],["matcha","🍵"],["cookie","🍪"],["oreo","🍪"],["biscoff","🍪"],["biscuit","🍪"],["chocolate","🍫"],["nutella","🍫"],["cocoa","🍫"],["kit kat","🍫"],["juice","🧃"],["lemon","🍋"],["lime","🍋"],["orange","🍊"],["apple","🍎"],["berry","🍓"],["strawberr","🍓"],["mango","🥭"],["banana","🍌"],["pineapple","🍍"],["peach","🍑"],["coconut","🥥"],["mint","🌿"],["basil","🌿"],["ginger","🫚"],["cinnamon","🟤"],["vanilla","🌼"],["water","💧"],["soda","🫧"],["tonic","🫧"],["cola","🥤"],["wine","🍷"],["beer","🍺"],["rum","🥃"],["whisk","🥃"],["vodka","🍸"],["gin","🍸"],["salt","🧂"],["cheese","🧀"]];
+function iconFor(i){
+  const ok=s=>typeof s==="string"&&s.length<=12&&/\p{Extended_Pictographic}/u.test(s)&&!/[\p{L}\p{N}]/u.test(s);
+  if(ok(i.icon))return i.icon;
+  const n=i.item.toLowerCase();
+  if(ICONS.has(n))return ICONS.get(n);
+  const k=KEYWORDS.find(([w])=>n.includes(w));
+  return k?k[1]:"🥤";
 }
-function ratioChart(list){
-  const d=ratioData(list);if(!d)return null;
-  const box=el("div");
-  const stack=el("div",null,"stack");stack.setAttribute("role","img");
-  stack.setAttribute("aria-label","Recipe ratio: "+d.map(x=>x.item+" "+(x.pct||"under 1")+"%").join(", "));
-  d.forEach((x,k)=>{const s=el("span");s.style.width=x.exact+"%";s.style.background=COLORS[k%COLORS.length];s.title=x.item+": "+x.pct+"%";stack.append(s)});
-  const lg=el("ul",null,"legend");
-  d.forEach((x,k)=>{
-    const li=el("li");const sw=el("span",null,"sw");sw.style.background=COLORS[k%COLORS.length];sw.setAttribute("aria-hidden","true");
-    const nm=el("span",x.item,"nm");nm.append(el("small"," · "+x.amount));
-    li.append(sw,nm,el("span",x.pct>0?x.pct+"%":"<1%","pc"));lg.append(li);
+
+/* bold + highlight ingredient names inside a step */
+function hlText(text,names){
+  const frag=document.createDocumentFragment();
+  const list=names.filter(n=>n&&n.length>1).sort((a,b)=>b.length-a.length).map(n=>n.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));
+  if(!list.length){frag.append(text);return frag}
+  text.split(new RegExp("("+list.join("|")+")","gi")).forEach((p,k)=>{
+    if(!p)return;
+    if(k%2)frag.append(el("strong",p,"hl"));else frag.append(p);
   });
-  box.append(stack,lg,el("p","Approximate share of the drink by volume. Ice and garnishes are not counted.","chartnote"));
-  return box;
+  return frag;
 }
+function secTitle(t,small){const h=el("h4",t,"sec");if(small)h.append(el("small",small));return h}
+function ingList(list){
+  const ul=el("ul",null,"ings");
+  list.forEach(i=>{
+    const li=el("li",null,"ing"+(i.from_user?"":" extra"));
+    const ic=el("span",iconFor(i),"ico");ic.setAttribute("aria-hidden","true");
+    const nm=el("span",i.item,"nm");if(!i.from_user&&i.optional)nm.append(el("small","optional"));
+    li.append(ic,nm,el("span",i.amount,"amt"));ul.append(li);
+  });
+  return ul;
+}
+const TEMPS_UI={hot:"🔥 Serve hot",cold:"🧊 Serve cold",room:"🥤 Serve as is"};
 
 function showResult(r,lv){
   const c=el("div",null,"ticket");
@@ -406,34 +421,42 @@ function showResult(r,lv){
   c.append(h);
   if(!ok)c.append(el("p","Sorry, this combination is unavailable.","unavail"));
   if(r.tagline)c.append(el("p",r.tagline,"tag"));
-  c.append(el("p",r.verdict_reason));
+  if(r.verdict_reason)c.append(el("p",r.verdict_reason,"lead"));
   if(ok){
-    if(r.temperature)c.append(el("p","Served: "+r.temperature));
-    if(r.fix_suggestion)c.append(el("div","The tweak: "+r.fix_suggestion,"note"));
-    c.append(el("h4","Ingredients"));
-    const ul=el("ul");
-    r.ingredients.forEach(i=>{const li=el("li",i.amount+" "+i.item);li.append(el("span",i.from_user?"yours":"extra"+(i.optional?", optional":""),"pill"));ul.append(li)});
-    c.append(ul);
-    const ch=ratioChart(r.ingredients);
-    if(ch){c.append(el("h4","Recipe ratio"),ch)}
-    c.append(el("h4","Steps"));
-    const ol=el("ol");r.steps.forEach(s=>ol.append(el("li",s)));c.append(ol);
+    const chips=el("div",null,"chips");
+    if(TEMPS_UI[r.temperature])chips.append(el("span",TEMPS_UI[r.temperature],"chip"));
+    chips.append(el("span","🥄 "+r.steps.length+" easy steps","chip"));
+    if(r.contains_alcohol)chips.append(el("span","🔞 Contains alcohol","chip"));
+    c.append(chips);
+    if(r.fix_suggestion)c.append(el("div","Quick fix: "+r.fix_suggestion,"note"));
+
+    const mine=r.ingredients.filter(i=>i.from_user),extra=r.ingredients.filter(i=>!i.from_user);
+    c.append(secTitle("What you’ll need"));
+    if(mine.length){if(extra.length)c.append(el("p","From your fridge","hint"));c.append(ingList(mine))}
+    if(extra.length){c.append(el("p","Grab from the kitchen","hint"),ingList(extra))}
+
+    c.append(secTitle("How to make it"));
+    const names=r.ingredients.map(i=>i.item);
+    const ol=el("ol",null,"steps");
+    r.steps.forEach(s=>{const li=el("li"),sp=el("span");sp.append(hlText(s,names));li.append(sp);ol.append(li)});
+    c.append(ol);
+
     if(r.flavour_profile){
-      c.append(el("h4","Flavour profile"));const bars=el("div",null,"bars");
+      c.append(secTitle("How it tastes"));const bars=el("div",null,"bars");
       Object.entries(r.flavour_profile).forEach(([k,v])=>{
         const row=el("div",null,"bar");row.append(el("span",k));
         const t=el("i");const f=el("b");f.style.width=(v*20)+"%";t.append(f);row.append(t,el("span",v+"/5"));bars.append(row);
       });c.append(bars);
     }
-    if(r.why_it_works)c.append(el("h4","Why it works"),el("p",r.why_it_works));
-    if(r.origin_note)c.append(el("h4","Origin"),el("p",r.origin_note));
-    if(r.mutation_log.length){c.append(el("h4","What we twisted"));const m=el("ul");r.mutation_log.forEach(x=>m.append(el("li",x.change+" — "+x.why)));c.append(m)}
+    if(r.why_it_works)c.append(secTitle("Why it tastes so good"),el("p",r.why_it_works,"fun"));
+    if(r.origin_note)c.append(secTitle("Where it comes from"),el("p",r.origin_note,"fun"));
+    if(r.mutation_log.length){c.append(secTitle("Our plot twists"));const m=el("ul",null,"plain");r.mutation_log.forEach(x=>m.append(el("li",x.change+(x.why?": "+x.why:""))));c.append(m)}
   }else if(r.fix_suggestion){
     c.append(el("div","Try this instead: "+r.fix_suggestion,"note"));
   }
-  if(r.unused_ingredients.length){c.append(el("h4","Left out"));const u=el("ul");r.unused_ingredients.forEach(x=>u.append(el("li",x.item+": "+x.reason)));c.append(u)}
+  if(r.unused_ingredients.length){c.append(secTitle("Didn’t make the cut"));const u=el("ul",null,"plain");r.unused_ingredients.forEach(x=>u.append(el("li",x.item+": "+x.reason)));c.append(u)}
   if(r.safety_note)c.append(el("div",r.safety_note,"note"));
-  if(r.zero_proof_swap)c.append(el("div","Zero-proof swap: "+r.zero_proof_swap,"note"));
+  if(r.zero_proof_swap)c.append(el("div","No-alcohol version: "+r.zero_proof_swap,"note"));
   const acts=el("div",null,"acts");
   if(ok){const cp=el("button","Copy recipe","btn");cp.type="button";cp.onclick=copyRecipe;acts.append(cp)}
   else{const ch=el("button","Change ingredients","btn");ch.type="button";ch.onclick=()=>{$("#s1").scrollIntoView({behavior:"smooth",block:"start"});$("#own").focus({preventScroll:true})};acts.append(ch)}
@@ -445,11 +468,10 @@ function showResult(r,lv){
 
 async function copyRecipe(){
   const r=last;if(!r)return;
-  const d=ratioData(r.ingredients);
-  const t=[r.drink_name+" ("+LEVELS[r.level||level]+")",r.tagline||"","","Ingredients:"]
-    .concat(r.ingredients.map(i=>"- "+i.amount+" "+i.item));
-  if(d)t.push("","Ratio:",...d.map(x=>"- "+x.item+": "+(x.pct||"<1")+"%"));
-  t.push("","Steps:",...r.steps.map((s,i)=>(i+1)+". "+s));
+  const t=[r.drink_name+" ("+LEVELS[r.level||level]+")",r.tagline||"","","What you'll need:"]
+    .concat(r.ingredients.map(i=>"- "+iconFor(i)+" "+i.amount+" "+i.item));
+  t.push("","How to make it:",...r.steps.map((s,i)=>(i+1)+". "+s));
+  if(r.why_it_works)t.push("","Why it tastes so good: "+r.why_it_works);
   if(r.safety_note)t.push("",r.safety_note);
   try{await navigator.clipboard.writeText(t.join("\n"));$("#status").textContent="Recipe copied."}
   catch(e){$("#status").textContent="Couldn’t copy. Select the recipe text and copy it by hand."}
