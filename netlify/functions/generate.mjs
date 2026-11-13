@@ -34,9 +34,17 @@ NOT ON THE MENU: "wont_work" and "rejected" both mean this combination is NOT ON
 
 PANTRY: water, ice and sugar are assumed available. Any other ingredient the user did not list is an extra: mark it from_user false and optional true, and respect the extras limit of the level. Every drink needs a liquid base. If none of the user's ingredients is a liquid, use water as the base.
 
-AMOUNTS: metric units (ml, g, tsp, tbsp). Every ingredient needs a clear amount and an "ml" number, which is its approximate volume in millilitres (1 tsp = 5, 1 tbsp = 15, 1 g of a solid is about 1, a pinch is about 0.3). Use null for ml only for ice and garnishes. Keep the amounts realistic so the ml values match the drink.
+AMOUNTS AND NAMES: every ingredient has a short "item" name and a clear "amount" (metric: ml, g, tsp, tbsp; a count like "2 cookies, crushed" is welcome). Keep the amount OUT of the item name. Keep the item name plain and short, like "Oreo cookies" or "Oat milk". Whenever a step mentions an ingredient, use exactly the same words as its item name, so the page can highlight it. Keep amounts realistic.
 
-STYLE: playful, confident, short. why_it_works is at most 2 sentences. At most 6 steps, each under 20 words. One serving unless the recipe needs more. At most one emoji in the whole output.
+ICONS: every ingredient gets an "icon": exactly one emoji that matches it (for example milk 🥛, matcha 🍵, strawberries 🍓, ice 🧊, sugar 🍬, chocolate 🍫, cookies 🍪, honey 🍯, coffee ☕, mint 🌿). Use a generic 🥤 only if nothing fits. The icon field is the ONLY place emoji are allowed. Never put emoji in any other text.
+
+VOICE (very important): write like a funny, friendly friend talking someone through a recipe in their kitchen. Use simple everyday words that a 12-year-old can follow. Keep it light and a little witty, never cringe, never mean, never fancy. Short sentences. Do not use bartender jargon or food-science words (no "emulsify", "muddle", "balanced notes", "acceptable", "safe", "ingredient list"). Do not mention rules, filters or checking. Give one small joke or playful line at most per section.
+- tagline: one playful line, at most 10 words.
+- verdict_reason: when the drink works, one cheerful sentence about why this mix is a good idea. When it does not, say kindly and plainly why, with a light touch, never preachy.
+- steps: 3 to 6 steps. Each step is ONE simple action, starts with a verb, and is under 14 words. Say what to do and for how long when it matters ("Blend for 30 seconds until smooth"). No step may need knowledge of special tools; say "blender", "glass", "spoon".
+- why_it_works: this is shown to the reader as "Why it tastes so good". Write 1 or 2 short, simple, fun sentences about how the flavours team up, like you are telling a friend. No jargon.
+- fix_suggestion: one short, friendly sentence.
+One serving unless the recipe needs more.
 
 ALCOHOL: if any ingredient contains alcohol, set contains_alcohol true, add a short safety_note (for adults of legal drinking age only; drink responsibly) and give a zero_proof_swap. Otherwise zero_proof_swap is null.
 
@@ -53,7 +61,7 @@ JSON SCHEMA (use exactly these keys):
   "tagline": string | null,
   "temperature": "hot" | "cold" | "room" | null,
   "contains_alcohol": true | false,
-  "ingredients": [ { "item": string, "amount": string, "ml": number | null, "from_user": true | false, "optional": true | false } ],
+  "ingredients": [ { "item": string, "amount": string, "icon": "one emoji", "from_user": true | false, "optional": true | false } ],
   "steps": [ string ],
   "flavour_profile": { "sweet": 0-5, "sour": 0-5, "bitter": 0-5, "creamy": 0-5, "intensity": 0-5 } | null,
   "why_it_works": string | null,
@@ -134,56 +142,12 @@ function getTexts(data) {
   return { content, reasoning };
 }
 
-// ---------- turning an amount into millilitres, so the ratio chart can be exact ----------
-const UNITS = [
-  [/^(?:ml|milliliters?|millilitres?)\b/, 1],
-  [/^(?:cl|centiliters?|centilitres?)\b/, 10],
-  [/^(?:dl|deciliters?|decilitres?)\b/, 100],
-  [/^(?:l|liters?|litres?)\b/, 1000],
-  [/^(?:tsp|teaspoons?)\b/, 5],
-  [/^(?:tbsp|tbs|tablespoons?)\b/, 15],
-  [/^(?:fl\.?\s*oz|fluid ounces?)\b/, 30],
-  [/^(?:oz|ounces?)\b/, 30],
-  [/^(?:cups?)\b/, 240],
-  [/^(?:kg|kilograms?)\b/, 1000],
-  [/^(?:g|grams?)\b/, 1],
-  [/^(?:dash(?:es)?)\b/, 0.6],
-  [/^(?:pinch(?:es)?)\b/, 0.3],
-  [/^(?:drops?)\b/, 0.05],
-  [/^(?:shots?)\b/, 45],
-  [/^(?:splash(?:es)?)\b/, 10],
-];
-const FRACS = { "½": " 1/2", "¼": " 1/4", "¾": " 3/4", "⅓": " 1/3", "⅔": " 2/3" };
-
-function amountToMl(text) {
-  const s = String(text || "").toLowerCase().replace(/[½¼¾⅓⅔]/g, (c) => FRACS[c]);
-  const m = s.match(/(\d+)\s+(\d+)\/(\d+)|(\d+)\/(\d+)|(\d+(?:[.,]\d+)?)(?:\s*(?:-|–|to)\s*(\d+(?:[.,]\d+)?))?/);
-  let qty = null, rest = "";
-  if (m) {
-    const num = (x) => parseFloat(String(x).replace(",", "."));
-    if (m[1] !== undefined) qty = num(m[1]) + num(m[2]) / num(m[3]);
-    else if (m[4] !== undefined) qty = num(m[4]) / num(m[5]);
-    else qty = m[7] !== undefined ? (num(m[6]) + num(m[7])) / 2 : num(m[6]);
-    rest = s.slice(m.index + m[0].length).trim();
-  } else if (/\b(pinch|dash|splash|drop)/.test(s)) {
-    qty = 1; rest = s.replace(/^.*?\b(?=(pinch|dash|splash|drop))/, "");
-  } else return null;
-  for (const [re, f] of UNITS) if (re.test(rest)) {
-    const ml = qty * f;
-    return Number.isFinite(ml) && ml > 0 ? ml : null;
-  }
-  return null;
-}
-
-function finalMl(item, amount, aiMl) {
-  if (/\bice\b/i.test(item) && !/ice cream/i.test(item)) return null; // ice melts and is not counted
-  const parsed = amountToMl(amount);          // what the person reads is the source of truth
-  if (parsed) return Math.round(parsed * 10) / 10;
-  const n = Number(aiMl);
-  return Number.isFinite(n) && n > 0 && n <= 2000 ? Math.round(n * 10) / 10 : null;
-}
-
 // ---------- checking the AI's answer ----------
+// One emoji only. Anything else (letters, digits, long text) is dropped and the page picks its own icon.
+const cleanIcon = (v) => {
+  const s = typeof v === "string" ? v.trim() : "";
+  return s && s.length <= 12 && /\p{Extended_Pictographic}/u.test(s) && !/[\p{L}\p{N}]/u.test(s) ? s : null;
+};
 const str = (v) => (typeof v === "string" && v.trim() ? v.trim() : null);
 const arr = (v) => (Array.isArray(v) ? v : []);
 
@@ -210,7 +174,7 @@ function parseResult(text, level) {
     contains_alcohol: o.contains_alcohol === true,
     ingredients: arr(o.ingredients).filter((i) => i && str(i.item)).map((i) => {
       const item = String(i.item), amount = str(i.amount) || "";
-      return { item, amount, ml: finalMl(item, amount, i.ml), from_user: i.from_user === true, optional: i.optional === true };
+      return { item, amount, icon: cleanIcon(i.icon), from_user: i.from_user === true, optional: i.optional === true };
     }),
     steps: arr(o.steps).map(str).filter(Boolean),
     flavour_profile: null,
