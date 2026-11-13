@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Fridge Bar: turn leftover drinks into a recipe</title>
+<meta name="description" content="Got leftover drink ingredients and no idea what to make? The Fridge Bar turns 2 to 5 of them into an easy drink recipe, Classic or Plot Twist.">
+<meta name="theme-color" content="#06130d">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-level="classic">
+<div class="bg" aria-hidden="true"><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i></div>
+<header>
+  <h1 class="rise">The Fridge Bar</h1>
+  <p class="sub rise" style="--d:.1s">Leftover drinks and ingredients in the fridge, and no idea what to make?</p>
+  <p class="sub2 rise" style="--d:.2s">Pick what you have, and we’ll turn it into a drink worth sipping. No waste, no guesswork.</p>
+  <p id="demo" hidden>Demo mode: results are built-in samples, no AI is called.</p>
+</header>
+
+<nav class="stepper rise" style="--d:.3s" aria-label="Progress">
+  <a href="#st1" data-s="1"><span class="n">1</span><span class="t">Pick</span></a>
+  <a href="#st2" data-s="2"><span class="n">2</span><span class="t">Style</span></a>
+  <a href="#st3" data-s="3"><span class="n">3</span><span class="t">Shake</span></a>
+</nav>
+
+<main>
+  <section class="step reveal" id="st1" aria-labelledby="s1">
+    <div class="step-head"><span class="badge" aria-hidden="true">1</span><div><p class="kicker">Step 1</p><h2 id="s1">What’s in your fridge?</h2></div></div>
+    <p class="hint">Type your own ingredient first, or pick from the shelf below. Drinks and drink-friendly sweets are welcome (Oreo, Biscoff, Nutella, cookies, ice cream). The shaker rejects savoury food and seasoning.</p>
+
+    <form id="addForm" class="own" novalidate>
+      <h3><label for="own">Type your own ingredient</label></h3>
+      <p>Anything you’d put in a drink: matcha, ginger ale, mango, almond milk…</p>
+      <div class="row">
+        <input id="own" type="text" autocomplete="off" list="sugg" maxlength="30" placeholder="e.g. matcha, mango, ginger ale">
+        <button class="btn" id="addBtn" type="submit">Add</button>
+      </div>
+      <datalist id="sugg"></datalist>
+      <p id="msg" aria-live="polite"></p>
+    </form>
+
+    <div id="cats"></div>
+  </section>
+
+  <section class="step reveal" id="st2" aria-labelledby="s2">
+    <div class="step-head"><span class="badge" aria-hidden="true">2</span><div><p class="kicker">Step 2</p><h2 id="s2">How adventurous are you?</h2></div></div>
+    <p class="hint">This also changes the colour of the whole bar.</p>
+    <fieldset class="dial" aria-labelledby="s2">
+      <input type="radio" name="level" id="l-classic" value="classic" checked><label for="l-classic"><b>★ Classic</b><span>A well-known drink everyone recognises, made the standard way.</span></label>
+      <input type="radio" name="level" id="l-twist" value="twist"><label for="l-twist"><b>↻ Plot Twist</b><span>Something less usual: a lesser-known drink, or a creative upgrade of the classic. Always balanced.</span></label>
+    </fieldset>
+  </section>
+
+  <section class="step reveal" id="st3" aria-labelledby="s3">
+    <div class="step-head"><span class="badge" aria-hidden="true">3</span><div><p class="kicker">Step 3</p><h2 id="s3">Shake it!</h2></div></div>
+    <p class="hint">Your shaker holds everything you picked. Tap an ingredient inside to take it out.</p>
+    <div id="shaker" class="shaker"><div id="slots" class="slots"></div></div>
+    <p id="count" aria-live="polite"></p>
+    <button id="go" class="btn go" type="button" disabled>Shake it</button>
+    <p id="status" aria-live="polite"></p>
+  </section>
+
+  <section id="resWrap" aria-live="polite"><div id="result"></div></section>
+</main>
+<footer><p>The Fridge Bar is for drinks only. Alcohol is for adults of legal drinking age.</p></footer>
+
+<script src="script.js"></script>
+</body>
+</html>
