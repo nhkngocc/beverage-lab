@@ -134,7 +134,7 @@ footer{max-width:760px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
 <main>
   <section aria-labelledby="s1">
     <h2 id="s1">Step 1: What’s in your fridge?</h2>
-    <p class="hint">Type your own ingredient first, or pick from the shelf below. Drinks only: no food or seasoning.</p>
+    <p class="hint">Type your own ingredient first, or pick from the shelf below. Drinks and drink-friendly sweets are welcome (Oreo, Biscoff, Nutella, cookies, ice cream). The shaker rejects savoury food and seasoning.</p>
 
     <form id="addForm" class="own" novalidate>
       <h3><label for="own">Type your own ingredient</label></h3>
@@ -202,11 +202,19 @@ apple pear peach plum apricot cherry grape grapefruit orange lemon lime tangerin
 cucumber carrot celery beet beetroot kale spinach tomato wheatgrass aloe
 mint peppermint spearmint basil rosemary thyme lavender rose hibiscus chamomile jasmine lemongrass pandan sage elderflower osmanthus chrysanthemum lait cafe
 cinnamon nutmeg cardamom clove anise turmeric saffron allspice ginger vanilla
-sugar honey agave maple molasses stevia caramel marshmallow jelly boba tapioca pearl sweetener jaggery`);
+sugar honey agave maple molasses stevia caramel marshmallow jelly boba tapioca pearl sweetener jaggery
+cookie cookies biscuit biscuits cake cupcake brownie brownies cheesecake donut doughnut muffin waffle pancake wafer graham cracker pudding custard flan tiramisu pie crumble crumb crumbs sprinkles frosting icing fudge toffee praline nougat marzipan truffle candy gummy gummies lollipop mochi
+icecream gelato sorbet sherbet popsicle froyo whipped topping spread jam marmalade preserves compote puree paste granola oats oatmeal cereal pretzel popcorn
+oreo biscoff lotus speculoos nutella kitkat snickers twix bounty mars milo ovaltine horlicks nesquik hershey hersheys reeses ferrero rocher toblerone cadbury lindt godiva pocky pepero timtam tim tam digestive ritz maltesers milkybar kinder
+sua tra nuoc chanh mia xoai dua phe`);
+/* sweet foods that are fine in a drink (soft block words are overridden by these) */
 /* words that mean "this is food or seasoning, not a drink ingredient" */
-const BLOCK=W(`salt pepper garlic onion scallion shallot chili chilli paprika cumin oregano curry mustard ketchup mayo mayonnaise sauce vinegar oil butter lard flour bread toast pasta spaghetti noodle ramen potato fry
-meat chicken beef pork lamb fish salmon tuna shrimp prawn crab bacon sausage ham steak egg cheese cookie biscuit cracker cake cereal chip pizza burger sandwich soup salad stew tofu mushroom cabbage cauliflower broccoli lettuce seasoning broth stock gravy dough batter candy gummy`);
-const BLOCK_PHRASES=["sour cream","cream cheese","peanut butter"];
+/* HARD block: savoury food or seasoning. Nothing can override these. */
+const BLOCK=W(`salt pepper garlic onion scallion shallot chili chilli paprika cumin oregano curry mustard ketchup mayo mayonnaise vinegar lard flour bread toast pasta spaghetti noodle ramen potato fry
+meat chicken beef pork lamb fish salmon tuna shrimp prawn crab bacon sausage ham steak egg pizza burger sandwich soup salad stew tofu mushroom cabbage cauliflower broccoli lettuce seasoning broth stock gravy`);
+const BLOCK_PHRASES=["sour cream","soy sauce","fish sauce","hot sauce","chili sauce","chilli sauce","oyster sauce","tomato sauce","pasta sauce","bbq sauce","barbecue sauce","worcestershire","olive oil","sesame oil","vegetable oil","cooking oil","garlic bread"];
+/* exact phrases that are always fine even though a word inside looks savoury */
+const OK_PHRASES=["kit kat","tim tam","peanut butter","almond butter","cashew butter","nut butter","cookie butter","cookie dough","cookies and cream","cookies & cream","cookie crumb","chocolate chip","cacao butter","cocoa butter","coconut oil","sweet potato","purple yam","ube","taro","pumpkin","corn","sweet corn","red bean","mung bean","black sesame","sesame paste","salted caramel","sea salt caramel","egg nog","egg cream","fried ice cream"];
 function forms(w){
   const f=[w];
   if(w.length>3){
@@ -217,13 +225,17 @@ function forms(w){
   return f;
 }
 function classify(v){
-  const norm=v.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[’']/g,"'");
+  const norm=v.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[’']/g,"'").replace(/đ/g,"d");
   const toks=norm.split(/[^a-z0-9]+/).filter(Boolean);
   const inSet=(set,t)=>forms(t).some(x=>set.has(x));
-  if(BLOCK_PHRASES.some(p=>norm.includes(p))||toks.some(t=>inSet(BLOCK,t)))
-    return{ok:false,msg:"“"+v+"” is a food or seasoning, not a drink ingredient. Try something you’d put in a glass."};
-  if(toks.some(t=>inSet(ALLOW,t)))return{ok:true};
-  return{ok:false,msg:"We don’t recognise “"+v+"” as a drink ingredient. Try a simpler name, like “mango” or “oat milk”."};
+  const squashed=toks.join(" ");
+  /* 1. known drink-friendly phrases always pass */
+  if(OK_PHRASES.some(p=>squashed.includes(p)))return{ok:true,known:true};
+  /* 2. only the obviously savoury stuff is blocked here */
+  if(BLOCK_PHRASES.some(p=>squashed.includes(p))||toks.some(t=>inSet(BLOCK,t)))
+    return{ok:false,msg:"“"+v+"” is savoury food or seasoning. Try something sweet or something you’d put in a glass."};
+  /* 3. everything else passes; the AI makes the final call when you shake */
+  return{ok:true,known:toks.some(t=>inSet(ALLOW,t))};
 }
 
 /* ---------- state ---------- */
@@ -260,7 +272,7 @@ function live(){
   if(v.length>30||!/^[\p{L}\p{N} '’&.-]+$/u.test(v)){b.disabled=true;say(v.length>30?"Keep it to 30 characters or fewer.":"Use letters, numbers and spaces only.","bad");return}
   const c=classify(v);
   b.disabled=!c.ok;
-  say(c.ok?"✓ Good, that works in a drink.":c.msg,c.ok?"ok":"bad");
+  say(c.ok?(c.known?"✓ Good, that works in a drink.":"✓ Added. The shaker will check this one when you shake."):c.msg,c.ok?"ok":"bad");
 }
 
 function render(){
